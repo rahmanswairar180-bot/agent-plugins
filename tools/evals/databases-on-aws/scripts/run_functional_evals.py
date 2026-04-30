@@ -334,6 +334,150 @@ def grade_eval(eval_item: dict, run_result: dict) -> dict:
             else:
                 evidence = "No alternatives suggested"
 
+        # --- Assertion: calls awspricing for region ---
+        elif "calls awspricing" in exp_lower:
+            region = ""
+            # Extract the intended region, excluding regions mentioned with "not"
+            # Match pattern like "for <region>" to get the expected region
+            region_match = re.search(r'for\s+(us-east-1|eu-west-1|ap-northeast-1|eu-central-1|ap-southeast-1|us-west-2)', exp_lower)
+            if region_match:
+                region = region_match.group(1)
+            # Fallback: check each region, but skip if it appears after "not"
+            elif "us-east-1" in exp_lower and "not us-east-1" not in exp_lower:
+                region = "us-east-1"
+            elif "eu-west-1" in exp_lower and "not eu-west-1" not in exp_lower:
+                region = "eu-west-1"
+            elif "ap-northeast-1" in exp_lower and "not ap-northeast-1" not in exp_lower:
+                region = "ap-northeast-1"
+            elif "eu-central-1" in exp_lower and "not eu-central-1" not in exp_lower:
+                region = "eu-central-1"
+
+            for call in tool_calls:
+                name = call["name"].lower()
+                if "awspricing" in name or "search_products" in name or "pricing" in name:
+                    call_str = json.dumps(call["input"]).lower()
+                    # Check for AuroraDSQL service
+                    if "auroradsql" in call_str or "aurora" in call_str or "dsql" in call_str:
+                        if region and region in call_str:
+                            passed = True
+                            evidence = f"Found awspricing call for {region} with AuroraDSQL: {json.dumps(call['input'])[:200]}"
+                            break
+                        elif not region:
+                            passed = True
+                            evidence = f"Found awspricing call for DSQL: {json.dumps(call['input'])[:200]}"
+                            break
+
+            if not passed:
+                # Check full text for awspricing patterns
+                if re.search(r"(awspricing|pricing|search_products)", full_text):
+                    if ("auroradsql" in full_text or "aurora" in full_text) and (not region or region in full_text):
+                        passed = True
+                        evidence = f"Found awspricing reference in transcript"
+
+            if not passed:
+                evidence = f"No awspricing call found{' for region: ' + region if region else ''}"
+
+        # --- Assertion: uses Default DPU Values ---
+        elif "default dpu values" in exp_lower or "default dpu" in exp_lower:
+            # Look for the specific default values or mention of defaults
+            if re.search(r"(0\.063|0\.00047|0\.003|0\.026)", full_text):
+                passed = True
+                evidence = "Found specific Default DPU Values (0.063, 0.00047, 0.003, or 0.026)"
+            elif re.search(r"(default.{0,30}dpu|dpu.{0,30}default|rough estimate|average query)", full_text):
+                passed = True
+                evidence = "Found reference to default DPU values or rough estimates"
+            else:
+                evidence = "No Default DPU Values or mention of defaults found"
+
+        # --- Assertion: provides monthly cost breakdown ---
+        elif "cost breakdown" in exp_lower or "monthly cost breakdown" in exp_lower:
+            components = ["read", "write", "compute", "storage"]
+            found = sum(1 for comp in components if comp in full_text)
+            if found >= 3:
+                passed = True
+                evidence = f"Found {found}/4 cost components (Read, Write, Compute, Storage)"
+            else:
+                evidence = f"Only found {found}/4 cost components in breakdown"
+
+        # --- Assertion: identifies largest cost driver ---
+        elif "largest cost driver" in exp_lower or "identifies the largest" in exp_lower:
+            if re.search(r"(dominant|largest|biggest|most|primary|main|major).{0,30}(cost|driver|component)", full_text):
+                passed = True
+                evidence = "Found identification of largest cost driver"
+            elif re.search(r"(read|write|compute|storage).{0,30}(dominant|largest|most|%|percent)", full_text):
+                passed = True
+                evidence = "Found cost driver identification with component and magnitude"
+            else:
+                evidence = "No clear identification of largest cost driver"
+
+        # --- Assertion: suggests optimization strategy ---
+        elif "optimization" in exp_lower and "suggests" in exp_lower:
+            patterns = [
+                r"(add|creat).{0,20}index",
+                r"reduc.{0,20}(rows scanned|scan|table scan)",
+                r"batch.{0,20}writ",
+                r"connection pool",
+                r"optimiz.{0,20}quer",
+            ]
+            for pat in patterns:
+                if re.search(pat, full_text):
+                    passed = True
+                    evidence = f"Found optimization suggestion matching pattern: {pat}"
+                    break
+            if not passed:
+                evidence = "No optimization strategies suggested"
+
+        # --- Assertion: provides total monthly cost estimate ---
+        elif "total monthly cost" in exp_lower or "monthly cost estimate" in exp_lower:
+            # Look for dollar amounts or "total" with cost context
+            if re.search(r"\$[\d,]+", full_text) or re.search(r"total.{0,30}(cost|\$)", full_text):
+                passed = True
+                evidence = "Found total monthly cost estimate"
+            else:
+                evidence = "No total monthly cost estimate found"
+
+        # --- Assertion: mentions EXPLAIN ANALYZE ---
+        elif "explain analyze" in exp_lower:
+            if re.search(r"explain.{0,20}analyze", full_text):
+                passed = True
+                evidence = "Found EXPLAIN ANALYZE reference"
+            else:
+                evidence = "No EXPLAIN ANALYZE mention found"
+
+        # --- Assertion: states assumptions clearly ---
+        elif "assumptions" in exp_lower or "states assumptions" in exp_lower:
+            if re.search(r"(assum|estimat.{0,20}assum|rough|approximat|\+/-|±)", full_text):
+                passed = True
+                evidence = "Found clear statement of assumptions or estimate caveats"
+            else:
+                evidence = "No clear statement of assumptions found"
+
+        # --- Assertion: mentions regional pricing differences ---
+        elif "regional pricing" in exp_lower or "regional" in exp_lower and "pric" in exp_lower:
+            if re.search(r"(region.{0,30}(pric|cost|vari)|pric.{0,30}vari.{0,30}region)", full_text):
+                passed = True
+                evidence = "Found mention of regional pricing differences"
+            else:
+                evidence = "No mention of regional pricing differences"
+
+        # --- Assertion: offers to help with schema/refinement ---
+        elif "offers to help" in exp_lower or "offers to" in exp_lower:
+            if re.search(r"(would you like|can i help|happy to|i can|let me know|if you|should i)", full_text):
+                passed = True
+                evidence = "Found offer to help or refine estimate"
+            else:
+                evidence = "No offer to help with refinement found"
+
+        # --- Assertion: does NOT ask for region ---
+        elif "does not ask for region" in exp_lower:
+            # Inverse check - should NOT find region questions
+            if re.search(r"(which.{0,30}region|what.{0,30}region|region.{0,20}\?)", full_text):
+                passed = False
+                evidence = "INCORRECTLY asks for region (it was already provided)"
+            else:
+                passed = True
+                evidence = "Correctly does not ask for region (already provided)"
+
         # --- Fallback: keyword search ---
         else:
             keywords = re.findall(r'\b[a-z_]{3,}\b', exp_lower)

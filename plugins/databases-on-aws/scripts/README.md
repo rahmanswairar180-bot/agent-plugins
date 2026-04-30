@@ -60,6 +60,35 @@ Add additional hooks to `.claude/settings.json` or override the defaults:
 
 ## Available Scripts
 
+### cost-estimator.sh
+
+Estimate monthly Aurora DSQL costs based on workload characteristics.
+
+```bash
+# Interactive mode
+./scripts/cost-estimator.sh --interactive
+
+# Quick estimate
+./scripts/cost-estimator.sh --read-tps 1000000 --write-tps 5000 --data-gb 1000
+
+# Detailed estimate
+./scripts/cost-estimator.sh --read-tps 500000 --write-tps 10000 --data-gb 5000 \
+  --num-shards 20 --rows-scanned 200
+```
+
+**Output:** Monthly cost breakdown including:
+
+- Compute DPUs (read + write transaction processing)
+- Read DPUs (SELECT operations)
+- Write DPUs (INSERT/UPDATE/DELETE + index updates)
+- Storage costs (data + indexes)
+- Cost driver analysis
+- Optimization recommendations
+
+**Note:** All costs shown are standard AWS list prices.
+
+---
+
 ### create-cluster.sh
 
 Create a new Aurora DSQL cluster.

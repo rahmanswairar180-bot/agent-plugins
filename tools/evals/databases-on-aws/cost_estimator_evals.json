@@ -1,0 +1,47 @@
+{
+  "skill_name": "dsql",
+  "evals": [
+    {
+      "id": 6,
+      "prompt": "I'm planning to migrate my MySQL e-commerce database to Aurora DSQL in us-east-1. It has 10B rows across 50 tables with 150 indexes. We get about 50K read queries per second and 5K writes per second. Can you estimate the monthly cost?",
+      "expected_output": "Queries awspricing for us-east-1 DPU and Storage pricing, uses Default DPU Values, calculates monthly costs with breakdown, highlights largest cost driver, suggests optimizations",
+      "files": [],
+      "expectations": [
+        "Calls awspricing search_products for us-east-1 DPU pricing (AuroraDSQL service)",
+        "Calls awspricing search_products for us-east-1 Storage pricing (AuroraDSQL service)",
+        "Uses Default DPU Values for estimation (0.063 for writes, 0.00047 for reads in writes, 0.003 for read compute)",
+        "Provides monthly cost breakdown showing Read DPUs, Write DPUs, Compute DPUs, and Storage costs separately",
+        "Identifies the largest cost driver (likely Read DPUs for this read-heavy workload)",
+        "Suggests at least one optimization strategy (e.g., add indexes, reduce rows scanned, batch writes)"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "What would it cost to run a DSQL cluster with 100K write TPS and 1M read TPS in eu-west-1? I have about 50TB of data.",
+      "expected_output": "Queries awspricing for eu-west-1 pricing, calculates costs using Default DPU Values, provides cost breakdown, mentions regional pricing differences, suggests optimizations for high-TPS workload",
+      "files": [],
+      "expectations": [
+        "Calls awspricing search_products for eu-west-1 region (not us-east-1)",
+        "Mentions that estimates use Default DPU Values or states assumptions clearly",
+        "Provides a total monthly cost estimate",
+        "Breaks down costs into Read DPUs, Write DPUs, Compute DPUs, and Storage",
+        "Mentions that EXPLAIN ANALYZE would provide more accurate estimates with real queries",
+        "Suggests cost optimization strategies relevant to high-TPS workloads"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "I want to estimate DSQL costs but I don't have my cluster set up yet. I'm building a multi-tenant SaaS app in ap-northeast-1 with expected traffic of 10K reads/sec and 1K writes/sec. Data size will be around 5TB.",
+      "expected_output": "Follows the cost estimation workflow: asks about region (already provided), queries awspricing, uses Default DPU Values, provides estimate with assumptions clearly stated, offers to help design schema for better cost optimization",
+      "files": [],
+      "expectations": [
+        "Calls awspricing search_products for ap-northeast-1 region",
+        "Explicitly states assumptions (e.g., 'This estimate assumes...' or mentions Default DPU Values)",
+        "Provides cost breakdown showing the percentage or amount for each component",
+        "Mentions that this is a rough estimate (+/- 30% or similar caveat)",
+        "Offers to help optimize schema or refine estimate with more details",
+        "Does NOT ask for region since ap-northeast-1 was already provided in the prompt"
+      ]
+    }
+  ]
+}

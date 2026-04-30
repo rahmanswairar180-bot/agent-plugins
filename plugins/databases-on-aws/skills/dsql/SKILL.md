@@ -1,6 +1,6 @@
 ---
 name: dsql
-description: "Build with Aurora DSQL — manage schemas, execute queries, handle migrations, diagnose query plans, and develop applications with a serverless, distributed SQL database. Covers IAM auth, multi-tenant patterns, MySQL-to-DSQL migration, DDL operations, and query plan explainability. Triggers on phrases like: DSQL, Aurora DSQL, create DSQL table, DSQL schema, migrate to DSQL, distributed SQL database, serverless PostgreSQL-compatible database, DSQL query plan, DSQL EXPLAIN ANALYZE, why is my DSQL query slow."
+description: "Build with Aurora DSQL — manage schemas, execute queries, handle migrations, diagnose query plans, estimate costs, and develop applications with a serverless, distributed SQL database. Covers IAM auth, multi-tenant patterns, MySQL-to-DSQL migration, DDL operations, query plan explainability, and cost optimization. Triggers on phrases like: DSQL, Aurora DSQL, create DSQL table, DSQL schema, migrate to DSQL, distributed SQL database, serverless PostgreSQL-compatible database, DSQL query plan, DSQL EXPLAIN ANALYZE, why is my DSQL query slow, DSQL cost, estimate DSQL costs, how much will DSQL cost, DSQL pricing."
 license: Apache-2.0
 metadata:
   tags: aws, aurora, dsql, distributed-sql, distributed, distributed-database, database, serverless, serverless-database, postgresql, postgres, sql, schema, migration, multi-tenant, iam-auth, aurora-dsql, mcp
@@ -17,6 +17,7 @@ Aurora DSQL is a serverless, PostgreSQL-compatible distributed SQL database. Thi
 - Migration support and safe schema evolution
 - Multi-tenant isolation patterns
 - IAM-based authentication
+- Cost estimation and optimization guidance
 
 ---
 
@@ -70,6 +71,11 @@ sampled in [.mcp.json](../../.mcp.json)
 **When:** MUST load when creating database roles, granting permissions, setting up schemas for applications, or handling sensitive data. ALWAYS use scoped roles for applications — create database roles with `dsql:DbConnect`.
 **Contains:** Scoped role setup, IAM-to-database role mapping, schema separation for sensitive data, role design patterns
 
+### [cost-estimation.md](references/cost-estimation.md)
+
+**When:** MUST load when user asks about DSQL costs, pricing, cost estimation, or optimization. SHOULD load when designing new schemas or migrating workloads to provide cost guidance.
+**Contains:** Cost estimation formulas for compute, read, write, and storage DPUs; required input parameters; cost optimization strategies; workload analysis queries; example calculations with Robinhood-scale reference
+
 ### DDL Migrations (modular):
 
 #### [ddl-migrations/overview.md](references/ddl-migrations/overview.md)
@@ -113,6 +119,30 @@ sampled in [.mcp.json](../../.mcp.json)
 
 **When:** MUST load all four at Workflow 8 Phase 0 — [query-plan/plan-interpretation.md](references/query-plan/plan-interpretation.md), [query-plan/catalog-queries.md](references/query-plan/catalog-queries.md), [query-plan/guc-experiments.md](references/query-plan/guc-experiments.md), [query-plan/report-format.md](references/query-plan/report-format.md)
 **Contains:** DSQL node types + Node Duration math + estimation-error bands, pg_class/pg_stats/pg_indexes SQL + correlated-predicate verification, GUC experiment procedures + 30-second skip protocol, required report structure + element checklist + support request template
+
+---
+
+## MCP Servers
+
+### awsknowledge
+
+Consult for Aurora DSQL documentation, service limits, and best practices.
+Use when verifying DSQL-specific features, constraints, or architectural guidance.
+
+### awspricing
+
+Get region-specific Aurora DSQL pricing for accurate cost estimates.
+
+**Service Code:** `AuroraDSQL`
+
+**Usage:**
+
+- Query DPU pricing: Filter by `usagetype` containing "DistributedProcessingUnits" and `regionCode`
+- Query Storage pricing: Filter by `usagetype` containing "Storage" and `regionCode`
+
+**ALWAYS query pricing for the target region before cost estimation.**
+
+See [cost-estimation.md](references/cost-estimation.md) for detailed query patterns and cost calculation formulas.
 
 ---
 
@@ -252,7 +282,31 @@ MUST load [ddl-migrations/overview.md](references/ddl-migrations/overview.md) be
 
 MUST load [mysql-migrations/type-mapping.md](references/mysql-migrations/type-mapping.md) for type mappings, feature alternatives, and migration steps.
 
-### Workflow 8: Query Plan Explainability
+### Workflow 8: Cost Estimation and Optimization
+
+Estimate monthly Aurora DSQL costs based on workload characteristics. Triggered by cost questions, migration planning, or workload design reviews. MUST load [cost-estimation.md](references/cost-estimation.md) for formulas, workflow, and optimization strategies.
+
+**Phase 0 — Understand Schema Context.** ALWAYS ask first: "Do you have existing schemas and query patterns, or would you like help designing an optimal DSQL schema?"
+
+- If existing schemas: Offer to translate and optimize for DSQL. Analyze actual queries to determine rows scanned, index usage, and missing indexes.
+- If designing new: Ask about use case (SaaS, e-commerce, IoT, etc.) and design DSQL-optimized schemas with proper indexes and realistic query patterns.
+
+**Phase 1 — Gather Workload Metrics.** Collect Read TPS, Write TPS, data size. Use schema analysis to determine: number of tables/indexes, average rows scanned per query (from actual queries), average rows changed per write.
+
+**Phase 2 — Calculate Costs.** Apply formulas from [cost-estimation.md](references/cost-estimation.md) using schema-informed metrics:
+
+- **Read DPUs** (based on actual query scan patterns)
+- **Write DPUs** (based on index count and write patterns)
+- **Compute DPUs** (transaction overhead)
+- **Storage** (data + indexes)
+
+**Phase 3 — Analyze and Recommend.** Identify cost driver and provide specific optimizations: missing indexes for existing schemas, query rewrites to reduce scans, denormalization opportunities. Show cost impact of each optimization.
+
+**Phase 4 — Compare.** If user has current database costs, compare DSQL projection against existing spend by component.
+
+**When connected to cluster:** Use MCP tools to query actual workload statistics (pg_stat_user_tables, pg_stat_user_indexes, pg_database_size) per [cost-estimation.md](references/cost-estimation.md) "MCP Tool Integration" section.
+
+### Workflow 9: Query Plan Explainability
 
 Explains why the DSQL optimizer chose a particular plan. Triggered by slow queries, high DPU, unexpected Full Scans, or plans the user doesn't understand. **REQUIRES a structured Markdown diagnostic report is the deliverable** beyond conversation — run the workflow end-to-end before answering. Use the `aurora-dsql` MCP when connected; fall back to raw `psql` with a generated IAM token (see the fallback block below) otherwise.
 

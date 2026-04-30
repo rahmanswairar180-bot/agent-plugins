@@ -37,6 +37,8 @@ PYTHONPATH="<skill-creator-path>:$PYTHONPATH" python -m scripts.run_eval \
 
 Tests simple skill correctness: MCP delegation, DSQL-specific guidance, and reference file routing.
 
+### Core DSQL Functionality
+
 ```bash
 python tools/evals/databases-on-aws/scripts/run_functional_evals.py \
   --evals tools/evals/databases-on-aws/evals.json \
@@ -45,7 +47,7 @@ python tools/evals/databases-on-aws/scripts/run_functional_evals.py \
   --verbose
 ```
 
-**What it checks** (5 eval prompts, 20 assertions total):
+**What it checks** (5 eval prompts, 26 assertions total):
 
 | Eval                   | Focus                 | Key assertions                                                             |
 | ---------------------- | --------------------- | -------------------------------------------------------------------------- |
@@ -54,6 +56,24 @@ python tools/evals/databases-on-aws/scripts/run_functional_evals.py \
 | 3. Index limits        | MCP delegation        | Calls `awsknowledge`, cites 24 index limit, suggests alternatives          |
 | 4. Python connection   | Language routing      | Recommends DSQL Python Connector, IAM auth, 15-min token expiry, SSL       |
 | 5. Column type change  | DDL migration routing | Table Recreation Pattern, DROP TABLE warning, batching, user confirmation  |
+
+### Cost Estimation
+
+```bash
+python tools/evals/databases-on-aws/scripts/run_functional_evals.py \
+  --evals tools/evals/databases-on-aws/cost_estimator_evals.json \
+  --plugin-dir plugins/databases-on-aws \
+  --output-dir /tmp/dsql-cost-eval-results \
+  --verbose
+```
+
+**What it checks** (3 eval prompts, 18 assertions total):
+
+| Eval                                | Focus               | Key assertions                                                                                                                   |
+|-------------------------------------|---------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| 6. Cost estimation (us-east-1)      | Cost workflow       | Calls `awspricing` for regional pricing                                                                                          |
+| 7. Cost estimation (eu-west-1)      | Regional pricing    | Queries pricing for correct region, mentions EXPLAIN ANALYZE for accuracy, suggests high-TPS optimizations                       |
+| 8. Cost estimation (ap-northeast-1) | Pre-deployment flow | States assumptions clearly, provides cost breakdown with percentages, offers schema optimization help, doesn't re-ask for region |
 
 ## Description Optimization
 
