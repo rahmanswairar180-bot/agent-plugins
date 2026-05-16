@@ -83,3 +83,7 @@ This project is licensed under the Apache License 2.0 — see the [LICENSE](LICE
 ## Acknowledgements
 
 This project is a fork of [awslabs/agent-plugins](https://github.com/awslabs/agent-plugins). Thank you to the original authors and contributors.
+
+---
+
+> **Personal fork notes:** I'm using this primarily to experiment with the Claude-specific plugins. The `.agents/plugins/marketplace.json` registry is largely untouched; most of my local additions live in `.claude-plugin/marketplace.json`.
