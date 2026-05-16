@@ -92,6 +92,7 @@ This project is a fork of [awslabs/agent-plugins](https://github.com/awslabs/age
 > - `claude-web-summarizer` — summarizes pages using Claude before passing to agent context
 > - `claude-diff-reviewer` — reviews git diffs and leaves inline comments
 > - `claude-note-taker` — captures key decisions and TODOs from a conversation into a local markdown file (early stages)
+> - `claude-session-logger` — logs full conversation sessions to `~/.agent-logs/` for later review (just started)
 >
 > **Syncing with upstream:** To pull in updates from the original repo, run:
 > ```bash
