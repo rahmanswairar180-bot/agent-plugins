@@ -88,6 +88,10 @@ This project is a fork of [awslabs/agent-plugins](https://github.com/awslabs/age
 
 > **Personal fork notes:** I'm using this primarily to experiment with the Claude-specific plugins. The `.agents/plugins/marketplace.json` registry is largely untouched; most of my local additions live in `.claude-plugin/marketplace.json`.
 >
+> My plugins-in-progress that aren't ready for upstream:
+> - `claude-web-summarizer` — summarizes pages using Claude before passing to agent context
+> - `claude-diff-reviewer` — reviews git diffs and leaves inline comments
+>
 > **Syncing with upstream:** To pull in updates from the original repo, run:
 > ```bash
 > git remote add upstream https://github.com/awslabs/agent-plugins.git
