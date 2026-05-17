@@ -100,4 +100,4 @@ This project is a fork of [awslabs/agent-plugins](https://github.com/awslabs/age
 > git fetch upstream
 > git merge upstream/main
 > ```
-> Note: I keep `.claude-plugin/marketplace.json` in a separate branch (`my-plugins`) to avoid merge conflicts with upstream changes.
+> Note: I typically only sync when there are changes to `.agents/plugins/marketplace.json` — my `.claude-plugin/` additions don't conflict with upstream but it's worth double-checking after each merge.
